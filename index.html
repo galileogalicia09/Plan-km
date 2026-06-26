@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Recuperación de Kilómetros</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --ink: #1a1917;
+    --ink2: #5a5855;
+    --ink3: #9a9895;
+    --accent: #1d5fa8;
+    --accent-light: #dbeafe;
+    --accent2: #0f3460;
+    --warn: #e76f51;
+    --border: #e0dfd9;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 10px;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    background: var(--accent2);
+    color: #fff;
+    padding: 2.5rem 2rem 2rem;
+  }
+
+  header .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #93c5fd;
+    margin-bottom: 0.5rem;
+  }
+
+  header h1 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 300;
+    line-height: 1.2;
+    max-width: 600px;
+  }
+
+  header h1 strong { font-weight: 500; }
+
+  header p {
+    margin-top: 0.75rem;
+    font-size: 14px;
+    color: #bfdbfe;
+    max-width: 520px;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .step-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .step-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+
+  .step-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 1.25rem;
+    color: var(--ink);
+  }
+
+  .fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  label {
+    font-size: 12px;
+    color: var(--ink2);
+    font-weight: 500;
+  }
+
+  label .sym {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    margin-right: 4px;
+  }
+
+  label .unit {
+    font-size: 11px;
+    color: var(--ink3);
+    font-weight: 400;
+    margin-left: 3px;
+  }
+
+  input, select {
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+
+  input::placeholder { color: var(--ink3); }
+
+  .hint {
+    font-size: 11px;
+    color: var(--ink3);
+    line-height: 1.4;
+  }
+
+  .phi-scale {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .phi-scale span {
+    font-size: 10px;
+    font-family: var(--mono);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    color: var(--ink2);
+    white-space: nowrap;
+  }
+
+  .btn-calcular {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+
+  .btn-calcular:hover { background: var(--accent2); }
+  .btn-calcular:active { transform: scale(0.99); }
+
+  .error-box {
+    background: #fff4f2;
+    border: 1px solid #fbb;
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-size: 13px;
+    color: var(--warn);
+    margin-bottom: 1.25rem;
+    display: none;
+  }
+
+  /* Resultados */
+  #resultados { display: none; }
+
+  .result-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-header h2 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .metric {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+  }
+
+  .metric .num {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent2);
+  }
+
+  .metric .lbl {
+    font-size: 11px;
+    color: var(--ink3);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
+  .chart-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .chart-wrap h3 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink2);
+    margin-bottom: 1rem;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+    height: 260px;
+  }
+
+  /* Tabla */
+  .tabla-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  .tabla-wrap h3 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink2);
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    background: var(--surface2);
+    padding: 9px 14px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--ink2);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody tr.semana-header td {
+    background: var(--accent-light);
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--accent2);
+    font-family: var(--mono);
+    padding: 7px 14px;
+    letter-spacing: 0.05em;
+  }
+
+  tbody tr.dia-activo td { padding: 8px 14px; }
+  tbody tr.dia-activo:hover { background: var(--surface2); }
+
+  tbody tr.dia-descanso td {
+    padding: 8px 14px;
+    color: var(--ink3);
+    font-style: italic;
+  }
+
+  .km-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .km-bar .bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+    min-width: 2px;
+    transition: width 0.3s;
+  }
+
+  .km-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .badge-descanso {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #f0efe9;
+    color: var(--ink3);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+  }
+
+  .btn-print {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px;
+    background: transparent;
+    color: var(--accent2);
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 0.5rem;
+  }
+
+  .btn-print:hover { background: var(--accent-light); }
+
+  .derived-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .derived-item .dlbl {
+    font-size: 11px;
+    color: var(--ink3);
+    font-family: var(--mono);
+    margin-bottom: 2px;
+  }
+
+  .derived-item .dval {
+    font-size: 15px;
+    font-family: var(--mono);
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  @media print {
+    header { background: var(--accent2) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .step-block, .btn-calcular, .btn-print { display: none !important; }
+    #resultados { display: block !important; }
+    .chart-wrap, .tabla-wrap, .derived-box { break-inside: avoid; }
+  }
+
+  @media (max-width: 600px) {
+    .fields-grid { grid-template-columns: 1fr; }
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Reto de cambio físico</div>
+  <h1>Plan de <strong>Recuperación</strong><br>de Kilómetros</h1>
+  <p>Ingrese sus datos en orden y el modelo calculará su plan personalizado con progresión exponencial suave, respetando el límite del 10% de incremento semanal.</p>
+  <div style="margin-top: 1.75rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.15); font-size: 12px; color: #93c5fd; font-family: 'DM Mono', monospace; letter-spacing: 0.08em;">
+    © Modelo matemático desarrollado por <strong style="color: #fff;">Luis Corrales</strong>
+  </div>
+</header>
+
+<div class="container">
+
+  <div id="errorBox" class="error-box"></div>
+
+  <!-- BLOQUE 1: Datos antropométricos -->
+  <div class="step-block">
+    <div class="step-label">Paso 1 — Datos antropométricos</div>
+    <div class="step-title">Características físicas personales</div>
+    <div class="fields-grid">
+      <div class="field">
+        <label><span class="sym">m</span> Masa corporal <span class="unit">kg</span></label>
+        <input type="number" id="m" placeholder="ej. 68" min="30" max="250" step="0.1">
+      </div>
+      <div class="field">
+        <label><span class="sym">h</span> Estatura <span class="unit">m</span></label>
+        <input type="number" id="h" placeholder="ej. 1.65" min="1.0" max="2.5" step="0.01">
+      </div>
+      <div class="field">
+        <label><span class="sym">a</span> Edad <span class="unit">años</span></label>
+        <input type="number" id="a" placeholder="ej. 25" min="10" max="100" step="1">
+      </div>
+      <div class="field">
+        <label><span class="sym">s</span> Sexo</label>
+        <select id="s">
+          <option value="">— Seleccioná —</option>
+          <option value="1">Hombre (s = 1)</option>
+          <option value="0">Mujer (s = 0)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label><span class="sym">FC<sub>rep</sub></span> Frec. cardíaca en reposo <span class="unit">lpm</span></label>
+        <input type="number" id="fcrep" placeholder="ej. 70" min="40" max="120" step="1">
+        <span class="hint">Medila por la mañana antes de levantarte. Valor típico: 60–80 lpm.</span>
+      </div>
+      <div class="field">
+        <label><span class="sym">φ</span> Nivel de condición física</label>
+        <input type="number" id="phi" placeholder="ej. 0.3" min="0" max="1" step="0.05">
+        <div class="phi-scale">
+          <span>0.0 sedentario</span>
+          <span>0.3 leve</span>
+          <span>0.5 moderado</span>
+          <span>0.8 frecuente</span>
+          <span>1.0 atleta</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOQUE 2: Parámetros del plan -->
+  <div class="step-block">
+    <div class="step-label">Paso 2 — Parámetros del plan</div>
+    <div class="step-title">Configuración del plan de entrenamiento</div>
+    <div class="fields-grid">
+      <div class="field">
+        <label><span class="sym">D</span> Kilómetros totales a recuperar <span class="unit">km</span></label>
+        <input type="number" id="D" placeholder="ej. 23" min="1" max="500" step="0.5">
+      </div>
+      <div class="field">
+        <label><span class="sym">n</span> Número de semanas del plan <span class="unit">semanas</span></label>
+        <input type="number" id="n" placeholder="ej. 4" min="1" max="52" step="1">
+      </div>
+      <div class="field">
+        <label><span class="sym">r</span> Días de descanso por semana <span class="unit">días</span></label>
+        <input type="number" id="r" placeholder="ej. 2" min="0" max="6" step="1">
+        <span class="hint">Se ubican al final de cada semana.</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-calcular" onclick="calcular()">Calcular mi plan →</button>
+
+  <!-- RESULTADOS -->
+  <div id="resultados">
+
+    <div style="height: 2rem;"></div>
+
+    <div class="result-header">
+      <h2>Su plan personalizado</h2>
+      <p style="font-size:13px; color:var(--ink3);">Basado en el modelo de progresión exponencial con restricción del 10% semanal.</p>
+    </div>
+
+    <!-- Valores derivados -->
+    <div class="derived-box" id="derivedBox"></div>
+
+    <!-- Métricas resumen -->
+    <div class="metrics-row" id="metricsRow"></div>
+
+    <!-- Gráfica -->
+    <div class="chart-wrap">
+      <h3>Progresión semanal de volumen</h3>
+      <div class="chart-container">
+        <canvas id="grafica" role="img" aria-label="Gráfica de barras con el volumen de kilómetros por semana">Volumen semanal en kilómetros.</canvas>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="tabla-wrap">
+      <h3>Plan día por día</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Día</th>
+            <th>Tipo</th>
+            <th>Kilómetros</th>
+          </tr>
+        </thead>
+        <tbody id="tablaCuerpo"></tbody>
+      </table>
+    </div>
+
+    <button class="btn-print" onclick="window.print()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Imprimir / Guardar como PDF
+    </button>
+
+  </div>
+</div>
+
+<script>
+let graficaInstance = null;
+
+function mostrarError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = msg;
+  box.style.display = 'block';
+  setTimeout(() => { box.style.display = 'none'; }, 5000);
+}
+
+function calcular() {
+  const m = parseFloat(document.getElementById('m').value);
+  const h = parseFloat(document.getElementById('h').value);
+  const a = parseFloat(document.getElementById('a').value);
+  const s = parseFloat(document.getElementById('s').value);
+  const fcrep = parseFloat(document.getElementById('fcrep').value);
+  const phi = parseFloat(document.getElementById('phi').value);
+  const D = parseFloat(document.getElementById('D').value);
+  const n = parseInt(document.getElementById('n').value);
+  const r = parseInt(document.getElementById('r').value);
+
+  if ([m,h,a,fcrep,phi,D,n,r].some(isNaN) || isNaN(s)) {
+    mostrarError('Por favor completá todos los campos antes de calcular.');
+    return;
+  }
+  if (r >= 7) { mostrarError('Los días de descanso deben ser entre 0 y 6.'); return; }
+  if (phi < 0 || phi > 1) { mostrarError('El nivel de condición física φ debe estar entre 0 y 1.'); return; }
+  if (h < 1 || h > 2.5) { mostrarError('La estatura debe estar en metros (ej. 1.65).'); return; }
+
+  // Cálculos del modelo
+  const imc = m / (h * h);
+  const imcIdeal = 21.5 - 1.5 * s;
+  const delta = Math.min(imcIdeal / imc, 1);
+  const fcmax = (s === 1 ? 220 : 210) - a;
+  const vo2 = 15 * (fcmax / fcrep) * (0.5 + 0.5 * phi);
+  const alpha = delta * (0.7 + 0.3 * phi);
+  const d = 7 - r;
+
+  // Volumen inicial V1
+  const V1 = (0.1 * D) / (Math.pow(1.1, n) - 1);
+
+  // Volúmenes semanales
+  const semanas = [];
+  for (let k = 1; k <= n; k++) {
+    semanas.push(V1 * Math.pow(1.1, k - 1));
+  }
+
+  // Mostrar valores derivados
+  document.getElementById('derivedBox').innerHTML = `
+    <div class="derived-item"><div class="dlbl">IMC</div><div class="dval">${imc.toFixed(2)} kg/m²</div></div>
+    <div class="derived-item"><div class="dlbl">IMC ideal (ref.)</div><div class="dval">${imcIdeal.toFixed(1)} kg/m²</div></div>
+    <div class="derived-item"><div class="dlbl">δ — factor corporal</div><div class="dval">${delta.toFixed(3)}</div></div>
+    <div class="derived-item"><div class="dlbl">FC máx. estimada</div><div class="dval">${fcmax} lpm</div></div>
+    <div class="derived-item"><div class="dlbl">VO₂ máx. estimado</div><div class="dval">${vo2.toFixed(1)} ml/kg/min</div></div>
+    <div class="derived-item"><div class="dlbl">α — factor de carga</div><div class="dval">${alpha.toFixed(3)}</div></div>
+    <div class="derived-item"><div class="dlbl">V₁ — vol. semana 1</div><div class="dval">${V1.toFixed(2)} km</div></div>
+    <div class="derived-item"><div class="dlbl">Días activos/semana</div><div class="dval">${d} días</div></div>
+  `;
+
+  // Métricas resumen
+  const kmMaxSemana = semanas[semanas.length - 1];
+  let kmMaxDia = 0;
+  for (let k = 1; k <= n; k++) {
+    const Vk = semanas[k-1];
+    for (let j = 1; j <= d; j++) {
+      const dkj = Vk * (2*j / (d*(d+1))) * alpha;
+      if (dkj > kmMaxDia) kmMaxDia = dkj;
+    }
+  }
+
+  document.getElementById('metricsRow').innerHTML = `
+    <div class="metric"><div class="num">${D} km</div><div class="lbl">Total a recuperar</div></div>
+    <div class="metric"><div class="num">${n} sem.</div><div class="lbl">Duración del plan</div></div>
+    <div class="metric"><div class="num">${(V1).toFixed(2)}</div><div class="lbl">km en semana 1</div></div>
+    <div class="metric"><div class="num">${kmMaxSemana.toFixed(2)}</div><div class="lbl">km en semana ${n}</div></div>
+    <div class="metric"><div class="num">${kmMaxDia.toFixed(2)}</div><div class="lbl">máx. km en un día</div></div>
+    <div class="metric"><div class="num">${(D * alpha).toFixed(2)}</div><div class="lbl">km ajustados totales</div></div>
+  `;
+
+  // Gráfica
+  if (graficaInstance) graficaInstance.destroy();
+  const ctx = document.getElementById('grafica').getContext('2d');
+  graficaInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: semanas.map((_, i) => `Semana ${i+1}`),
+      datasets: [{
+        label: 'Volumen (km)',
+        data: semanas.map(v => parseFloat((v * alpha).toFixed(2))),
+        backgroundColor: semanas.map((_, i) => {
+          const t = i / (n - 1 || 1);
+          const r = Math.round(45 + t * 10);
+          const g = Math.round(106 + t * (-30));
+          const b = Math.round(79 + t * (-20));
+          return `rgb(${r},${g},${b})`;
+        }),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y.toFixed(2)} km`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'DM Mono', size: 11 }, color: '#9a9895' }
+        },
+        y: {
+          grid: { color: '#e0dfd9' },
+          ticks: {
+            font: { family: 'DM Mono', size: 11 },
+            color: '#9a9895',
+            callback: v => v.toFixed(1) + ' km'
+          }
+        }
+      }
+    }
+  });
+
+  // Tabla día por día
+  const tbody = document.getElementById('tablaCuerpo');
+  tbody.innerHTML = '';
+  let maxKmDia = 0;
+  const filas = [];
+
+  for (let k = 1; k <= n; k++) {
+    const Vk = semanas[k-1];
+    for (let j = 1; j <= d; j++) {
+      const dkj = Vk * (2*j / (d*(d+1))) * alpha;
+      if (dkj > maxKmDia) maxKmDia = dkj;
+      filas.push({ k, j, km: dkj, descanso: false });
+    }
+    for (let j = 1; j <= r; j++) {
+      filas.push({ k, j: d + j, km: 0, descanso: true });
+    }
+  }
+
+  let semanaActual = 0;
+  filas.forEach(f => {
+    if (f.k !== semanaActual) {
+      semanaActual = f.k;
+      const Vk = semanas[f.k - 1];
+      const tr = document.createElement('tr');
+      tr.className = 'semana-header';
+      tr.innerHTML = `<td colspan="4">SEMANA ${f.k} — ${(Vk * alpha).toFixed(2)} km ajustados</td>`;
+      tbody.appendChild(tr);
+    }
+
+    const tr = document.createElement('tr');
+    if (f.descanso) {
+      tr.className = 'dia-descanso';
+      tr.innerHTML = `
+        <td></td>
+        <td>Día ${f.j}</td>
+        <td><span class="badge-descanso">descanso</span></td>
+        <td>—</td>`;
+    } else {
+      tr.className = 'dia-activo';
+      const pct = Math.max(4, (f.km / maxKmDia) * 100);
+      tr.innerHTML = `
+        <td></td>
+        <td>Día ${f.j}</td>
+        <td>Carrera</td>
+        <td>
+          <div class="km-bar">
+            <div class="bar" style="width:${pct.toFixed(0)}px; max-width:120px;"></div>
+            <span class="km-val">${f.km.toFixed(2)} km</span>
+          </div>
+        </td>`;
+    }
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('resultados').style.display = 'block';
+  document.getElementById('resultados').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
